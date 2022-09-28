@@ -1,0 +1,675 @@
+---
+title: "Streaming Platforms Analysis, Movies and TV"
+author: "Meaghan Rodgers"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Streaming Platform Quality Analysis
+
+This analysis is for case study 2 from the Google Data Analytics Certificate. The business task is set by a fictional TV company looking to prioritize the software development of various streaming platform applications. They can make applications for different streaming services, but want to focus on ones with highest quality shows and widest age range first. We will be using the two data sets created by Ruchi Bhatia that are available on Kaggle. The first dataset is, "Movies on Netflix, Prime Video, Hulu and Disney+", found here: (https://www.kaggle.com/datasets/ruchi798/movies-on-netflix-prime-video-hulu-and-disney). The second is data set is, "TV shows on Netflix, Prime Video, Hulu and Disney+", found here: (https://www.kaggle.com/datasets/ruchi798/tv-shows-on-netflix-prime-video-hulu-and-disney).  
+
+The purpose of this script is to clean the data, manipulate it to prepare it for analysis, and then conduct simple analysis to answer: "Which streaming platform offers the highest quality content, as rated by Rotten Tomatoes, and which has the widest viewing age range?"
+
+
+
+### Step 1. Install and download the required packages. 
+Install required packages
+
+* tidyverse for data import and wrangling
+
+* janitor for cleaning data
+
+* ggplot2 and scales for visualization
+
+* grid and gridExtra for streamlining the presentation  
+
+
+```{r Installing packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(scales)
+library(grid)
+library(gridExtra)
+```
+
+### Step 2. Import the required datasets
+
+```{r Loading databases, message=FALSE, warning=FALSE}
+movie_df_1 <- read_csv("../01_raw_data_sets/MoviesOnStreamingPlatforms.csv")
+tv_df_1 <- read_csv("../01_raw_data_sets/tv_shows.csv")
+```
+
+### Step 3. Clean data to prep for data manipulation and transformation
+#### Tidying our dataframes
+##### Movie data frame
+
+We will start by cleaning the names, then selecting the columns we're interested in examining. Then we'll make each column name more distinct to clarify when we're analyzing both data frames.
+```{r}
+clean_movie_df_1 <- clean_names(movie_df_1)
+movie_df_2 <- clean_movie_df_1 %>% 
+  select("id", "year", "age", "rotten_tomatoes", "netflix", "hulu", "prime_video", "disney")
+movie_df_2 <- movie_df_2 %>% 
+  rename(release_year_movie=year, age_rating_movie=age, rotten_tomatoes_movie=rotten_tomatoes, netflix_movie=netflix, hulu_movie=hulu, prime_video_movie=prime_video, disney_movie=disney)
+glimpse(movie_df_2)
+```
+After a quick look at the movie data frame we've put together, we see it has 9,515 rows and the 8 columns we selected.  Now we resolve any NA's in our data frame, but first we check for them.
+```{r}
+sum(is.na(movie_df_2))
+sum(is.na(movie_df_2$age_rating_movie))
+sum(is.na(movie_df_2$rotten_tomatoes_movie))
+```
+It looks like age_rating_movie has most of the NA's (4,177), and rotten_tomatoes_movie as the rest (7).  We have a lot of Na's in age_rating_movie, so we're going to replace these rather than remove them. For rotten_tomatoes_movie, there are only 7 NA's in over 9500 rows, so we will remove them without skewing data.
+```{r}
+movie_df_2 <- replace_na(movie_df_2, list(age_rating_movie = "unknown"))
+movie_df_2 <- drop_na(movie_df_2)
+```
+
+##### TV data frame
+Next, we'll follow the same procedure for the TV data set, beginning with cleaning the names of each column and then selecting columns for a new data frame. We will also rename the columns for clarity. 
+```{r}
+clean_tv_df_1 <- clean_names(tv_df_1)
+tv_df_2 <- clean_tv_df_1 %>% 
+  select("id", "year", "age", "rotten_tomatoes", "netflix", "hulu", "prime_video", "disney")
+tv_df_2 <- tv_df_2 %>% 
+  rename(release_year_tv=year, age_rating_tv=age, rotten_tomatoes_tv=rotten_tomatoes, netflix_tv=netflix, hulu_tv=hulu, prime_video_tv=prime_video, disney_tv=disney)
+glimpse(tv_df_2)
+```
+
+The TV data frame is smaller than the Movie data frame, with 5,368 rows and 8 columns. Now we're going to check for NA's. 
+```{r}
+sum(is.na(tv_df_2))
+sum(is.na(tv_df_2$age_rating_tv))
+```
+
+All of the NA's are in the age category. There are too many to remove without skewing data, so we'll replace. 
+```{r}
+tv_df_2 <- replace_na(tv_df_2, list(age_rating_tv = "unknown"))
+sum(is.na(tv_df_2))
+```
+
+#### Rotten tomatoes conversions
+The next step to prepping our data is to convert the rotten_tomatoes for both data frames from character to number
+This will be done is a couple steps. First, we'll separate the value, so it does not read as a fraction when we convert, then convert from a character type vector to a double. We'll do this for both data frames. 
+
+##### Movie data frame
+```{r Movie df rotten tomatoes to double, message=FALSE, results='hide'}
+movie_df_2 <- separate(movie_df_2, rotten_tomatoes_movie, sep="/", into=c("rotten_tomatoes_movie", "soon_to_be_dropped")) %>% 
+select(-soon_to_be_dropped)
+sapply(movie_df_2, class)
+vec <- c(4)
+movie_df_2[ , vec] <- apply(movie_df_2[ , vec, drop=F], 1,
+                                                  function(x) as.numeric(as.character(x)))
+```
+
+##### TV data frame
+We'll repeat the same separation and conversion with the TV data frame.
+```{r TV df rotten tomatoes to double, results='hide'}
+tv_df_2 <- separate(tv_df_2, rotten_tomatoes_tv, sep="/", into=c("rotten_tomatoes_tv", "soon_to_be_dropped_2")) %>% 
+  select(-soon_to_be_dropped_2)
+sapply(tv_df_2, class)
+vec <- c(4)
+tv_df_2[ , vec] <- apply(tv_df_2[ , vec, drop=F], 1,
+                                               function(x) as.numeric(as.character(x)))
+```
+
+#### Collective platform column
+There is no column containing all the streaming platforms, so we will make one now, as a new data frame, since we are making several vector type changes.First, we copy our data frame, then name changes from double vectors to characters. Then remane them, so that they remain distinct with we put them together in one column. 
+
+##### Movie data frame
+```{r movie platforms from double to character, results='hide'}
+movie_df_3 <- movie_df_2
+glimpse(movie_df_3)
+
+sapply(movie_df_3, class)
+vec <- c(5)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                                          function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(6)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                                          function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(7)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                                          function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(8)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                                          function(x) as.character(as.numeric(x)))
+```
+
+We have now converted all the streaming platforms columns to character vectors. We'll substitute the "1's" and "0's" as longer, distinct strings, trim white space, and make our new column.
+
+```{r movie platforms 1 to string, results='hide'}
+movie_df_3$netflix_movie <- gsub("1", "netflix_film", movie_df_3$netflix_movie)
+movie_df_3$netflix_movie <- gsub("0", "", movie_df_3$netflix_movie)
+
+movie_df_3$hulu_movie <- gsub("1", "hulu_film", movie_df_3$hulu_movie)
+movie_df_3$hulu_movie <- gsub("0", "", movie_df_3$hulu_movie)
+
+movie_df_3$prime_video_movie <- gsub("1", "prime_video_film", movie_df_3$prime_video_movie)
+movie_df_3$prime_video_movie <- gsub("0", "", movie_df_3$prime_video_movie)
+
+movie_df_3$disney_movie <- gsub("1", "disney_film", movie_df_3$disney_movie)
+movie_df_3$disney_movie <- gsub("0", "", movie_df_3$disney_movie)
+
+movie_df_3$all_platforms_movie <- paste(movie_df_3$netflix_movie , movie_df_3$hulu_movie , movie_df_3$prime_video_movie, movie_df_3$disney_movie)
+movie_df_3$all_platforms_movie <- trimws(movie_df_3$all_platforms_movie , which = c("right"))
+movie_df_3$all_platforms_movie <- 
+  ifelse((nchar(movie_df_3$all_platforms_movie)) <= 20, movie_df_3$all_platforms_movie, "multi_platform_film" )
+
+```
+
+##### TV data frame
+We repeat this conversion for the TV data frame.
+```{r movie platforms from double to character and 1 to string, results='hide'}
+tv_df_3 <- tv_df_2
+sapply(tv_df_3, class)
+vec <- c(5)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                           function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(6)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                           function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(7)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                           function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(8)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                           function(x) as.character(as.numeric(x)))
+tv_df_3$netflix_tv <- gsub("1", "netflix_show", tv_df_3$netflix_tv)
+tv_df_3$netflix_tv <- gsub("0", "", tv_df_3$netflix_tv)
+
+tv_df_3$hulu_tv <- gsub("1", "hulu_show", tv_df_3$hulu_tv)
+tv_df_3$hulu_tv <- gsub("0", "", tv_df_3$hulu_tv)
+
+tv_df_3$prime_video_tv <- gsub("1", "prime_video_show", tv_df_3$prime_video_tv)
+tv_df_3$prime_video_tv <- gsub("0", "", tv_df_3$prime_video_tv)
+
+tv_df_3$disney_tv <- gsub("1", "disney_show", tv_df_3$disney_tv)
+tv_df_3$disney_tv <- gsub("0", "", tv_df_3$disney_tv)
+
+tv_df_3$all_platforms_tv <- paste(tv_df_3$netflix_tv, tv_df_3$hulu_tv, tv_df_3$prime_video_tv, tv_df_3$disney_tv)
+tv_df_3$all_platforms_tv <- trimws(tv_df_3$all_platforms_tv, which = c("right"))
+
+tv_df_3$all_platforms_tv <-
+  ifelse((nchar(tv_df_3$all_platforms_tv)) >= 20, "multi_platform_show", tv_df_3$all_platforms_tv )
+```
+
+#### Rotten Tomatoes category column 
+We're going to add another column to each data frame, where each show or film falls into a specific rotten tomatoes category:  certified fresh, fresh, and rotten. The Rotten Tomatoes scoring system is as follows: certified fresh content scores 75 on the Tomatomerter or above, fresh scores between 74 and 60, and rotten content scores 59 or below. Finally, we'll relocate the column.
+
+##### Movie data frame
+```{r movie rotten tomatoes category column, results='hide'}
+movie_df_3$tomato_category_movie <- movie_df_3$rotten_tomatoes_movie
+glimpse(movie_df_3)
+sapply(movie_df_3, class)
+vec <- c(10)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                               function(x) as.character(as.numeric(x)))
+glimpse(movie_df_3)
+movie_df_3$tomato_category_movie <-
+  ifelse((movie_df_3$tomato_category_movie) >= 75, "certified_fresh", movie_df_3$tomato_category_movie)
+movie_df_3$tomato_category_movie <-
+  ifelse((((movie_df_3$tomato_category_movie) < 75)&((movie_df_3$tomato_category_movie) > 59)), "fresh", movie_df_3$tomato_category_movie)
+movie_df_3$tomato_category_movie <-
+  ifelse((movie_df_3$tomato_category_movie) <=59, "rotten", movie_df_3$tomato_category_movie)
+movie_df_3<- movie_df_3 %>% 
+  relocate(tomato_category_movie, .after=rotten_tomatoes_movie)
+```
+
+##### TV data frame
+```{r tv rotten tomatoes category column, results='hide'}
+tv_df_3$tomato_category_tv <- tv_df_3$rotten_tomatoes_tv
+glimpse(tv_df_3)
+sapply(tv_df_3, class)
+vec <- c(10)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+tv_df_3$tomato_category_tv <-
+  ifelse((tv_df_3$tomato_category_tv) >= 75, "certified_fresh", tv_df_3$tomato_category_tv)
+tv_df_3$tomato_category_tv <-
+  ifelse((((tv_df_3$tomato_category_tv) < 75)&((tv_df_3$tomato_category_tv) > 59)), "fresh", tv_df_3$tomato_category_tv)
+tv_df_3$tomato_category_tv <-
+  ifelse((tv_df_3$tomato_category_tv) <=59, "rotten", tv_df_3$tomato_category_tv)
+tv_df_3<- tv_df_3 %>% 
+  relocate(tomato_category_tv, .after=rotten_tomatoes_tv)
+```
+
+
+#### Outliers with boxplots
+We will examine the release_year and rotten_tomatoes for outliers. First, we'll check for outliers in release_year, then rotten_tomatoes. We can start with a boxplot to check for outliers. Then we'll use summary and the interquartile range (IQR) to find extreme outliers and remove them. 
+
+##### Movie data frame
+```{r movie year outliers, results='hide'}
+boxplot(movie_df_3$release_year_movie)
+summary(movie_df_3$release_year_movie)
+IQR(movie_df_3$release_year_movie)
+Tmin = 2006-(3*12) 
+Tmax = 2018+(3*12) 
+movie_df_3$release_year_movie[which(movie_df_3$release_year_movie < Tmin | movie_df_3$release_year_movie > Tmax)]
+```
+We have 642 data points that are labeled as outliers here. We'll make a separate data frame that removes the outliers from the time line, but first we will examine the rotten_tomatoes column. 
+```{r movie rotten tomatoes outliers}
+boxplot(movie_df_3$rotten_tomatoes_movie)
+summary(movie_df_3$rotten_tomatoes_movie)
+IQR(movie_df_3$rotten_tomatoes_movie)
+Tmin = 44- (3*18)
+Tmax = 62+ (3*18)
+```
+The Tmin and Tmax for extreme outliers do not exceed the data in the data frame, so no outliers will be removed. We can now make a data frame for the movies data frame.
+```{r movie outlier data frame}
+movie_sans_outlier_df <- movie_df_3
+movie_sans_outlier_df <- movie_sans_outlier_df %>% 
+  filter(release_year_movie >= 1970)
+```
+
+##### TV data frame
+We'll examine the TV data frame, both in release_year and rotten_tomatoes. Then we'll make a new data frame as needed. 
+```{r tv year outliers, results='hide'}
+boxplot(tv_df_3$release_year_tv)
+summary(tv_df_3$release_year_tv)
+IQR(tv_df_3$release_year_tv)
+Tmin = 2011-(3*7) 
+Tmax = 2018+(3*7) 
+tv_df_3$release_year_tv[which(tv_df_3$release_year_tv < Tmin | tv_df_3$release_year_tv > Tmax)]
+```
+We have 207 data points that are labeled as outliers here. We'll make a separate data frame that removes the outliers from the time line, but first we'll examine the rotten_tomatoes column.
+```{r tv rotten tomatoes outliers}
+boxplot(tv_df_3$rotten_tomatoes_tv)
+summary(tv_df_3$rotten_tomatoes_tv)
+IQR(tv_df_3$rotten_tomatoes_tv)
+Tmin = 36- (3*24)
+Tmax = 60+ (3*24)
+```
+The Tmin and Tmax for extreme outliers do not exceed the data in the data frame, so no outliers will be removed. We can now make a data frame for the TV data frame.
+```{r tv outliers data frame}
+tv_sans_outlier_df <- tv_df_3
+tv_sans_outlier_df <- tv_sans_outlier_df %>% 
+  filter(release_year_tv >= 1990)
+```
+
+
+### Step 5. Analysis and visualization 
+We're looking into the quality of shows that are on various platforms, as well as the age ranges they are geared towards. We have several dataframes at which we'll be looking: movie_df_2 and tv_df_2, which keep the platforms in a numerical format; and movie_df_3 and tv_df_3, which changed the platforms to characters;
+movie_recent_df and tv_recent_df to examine the most recent content; and movie_sans_outlier and tv_sans_outlier to examine release years without outliers. skewing data.
+
+#### Relationship between Rotten Tomatoes scores and release year by platform
+And now we'll look at the relationship between rotten_tomatoes and release_year with our data frame that has outliers removed.
+
+##### Movie data frame
+```{r movie rotten tomatoes over the years graph, message=FALSE, warning=FALSE}
+movie_tomato_scores_long_chart <- ggplot(movie_sans_outlier_df, aes(x=release_year_movie, y=rotten_tomatoes_movie, color=all_platforms_movie))+
+  geom_smooth()+
+  labs(y = "Rotten Tomatoes rating", x = "Film release year", color= "Movie streaming platforms")+
+  ggtitle("Rotten Tomatoes scores over time for films")
+movie_tomato_scores_long_chart
+```
+
+##### TV data frame
+```{r tv rotten tomatoes over the years graph, message=FALSE, warning=FALSE}
+tv_tomato_scores_long_chart <- ggplot(tv_sans_outlier_df, aes(x=release_year_tv, y=rotten_tomatoes_tv, color=all_platforms_tv))+
+  geom_smooth()+
+    labs(y = "Rotten Tomatoes rating", x = "Show release year", color= "TV streaming platforms")+
+  ggtitle("Rotten Tomatoes ratings over time for TV shows")
+tv_tomato_scores_long_chart
+```
+
+
+
+
+#### Rotten Tomatoes distribution for all(historical) and recent (2020-2021) content
+Is there a difference in those films and shows that have been recently released (released between 2020-2021) and the total content available on each platform? To explore this, we will examine historical data and then make quick data frames to account for only the most recent films and shows. As platforms have been releasing original content (Netflix has "Netflix Originals", Hulu has "Hulu Originals", Prime Video has "Amazon Originals", and Disney+ has "Disney Originals") in recent years, this could be valuable insight. We will take a count of the content released, them examine the percentages of each platform.
+
+##### Both movie data frame and tv data frame
+```{r both data set tomato category count}
+historical_total_tomato_count_chart<- 
+  ggplot() + 
+  geom_bar(data = movie_df_3, aes(x = all_platforms_movie, fill=tomato_category_movie )) +
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  labs(y = "Content count", x = "Streaming platform", fill= "Rotten Tomato category")+
+   ggtitle("Total content count of Rotten Tomatoes categories for films and TV shows")+
+  geom_bar(data = tv_df_3, aes(x = all_platforms_tv, fill= tomato_category_tv)) 
+historical_total_tomato_count_chart
+```
+```{r}
+movie_recent_df <- movie_df_3
+movie_recent_df <- movie_recent_df %>% 
+  filter(release_year_movie >= 2020)
+tv_recent_df<- tv_df_3
+tv_recent_df <- tv_recent_df %>% 
+  filter(release_year_tv >= 2020)
+
+recent_total_tomato_count_chart<- 
+  ggplot() + 
+  geom_bar(data = movie_recent_df, aes(x = all_platforms_movie, fill=tomato_category_movie )) +
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  labs(y = "Content count", x = "Streaming platform", fill= "Rotten Tomato category")+
+   ggtitle("Total content count of Rotten Tomatoes categories for recent films and TV shows, 2020-2021")+
+  geom_bar(data = tv_recent_df, aes(x = all_platforms_tv, fill= tomato_category_tv)) 
+recent_total_tomato_count_chart
+```
+
+
+
+
+##### Movie data frame
+
+```{r Movie tomato percent graph, message=FALSE, warning=FALSE}
+movie_percent_chart_df <- movie_df_3
+movie_percent_chart_df <- movie_percent_chart_df %>% 
+  drop_na(tomato_category_movie) %>% 
+  count(all_platforms_movie, tomato_category_movie) %>% 
+  group_by(all_platforms_movie)
+movie_percent_chart_df$new_row_movie<- movie_percent_chart_df %>% 
+  mutate(prop= n/sum(n),
+         tomato_category_movie= factor(tomato_category_movie, levels = 1:3, labels = c("certified_fresh", "fresh", "rotten")))
+movie_historic_tomato_distribution_chart_percent_labeled <- ggplot(movie_percent_chart_df, aes(x=all_platforms_movie, y=new_row_movie$prop, fill= tomato_category_movie))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row_movie$prop)), position = position_stack(vjust = .5))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Rotten Tomato category") +
+  ggtitle("Total distribution of Rotten Tomatoes categories over time for films")
+movie_historic_tomato_distribution_chart_percent_labeled 
+```  
+
+```{r movie recent percent graph, message=FALSE, warning=FALSE}
+
+movie_recent_percent_chart_df <- movie_recent_df
+movie_recent_percent_chart_df <- movie_recent_percent_chart_df %>% 
+  drop_na(tomato_category_movie) %>% 
+  count(all_platforms_movie, tomato_category_movie) %>% 
+  group_by(all_platforms_movie)
+movie_recent_percent_chart_df$new_row_movie<- movie_recent_percent_chart_df %>% 
+  mutate(prop= n/sum(n),
+         tomato_category_movie= factor(tomato_category_movie, levels = 1:3, labels = c("certified_fresh", "fresh", "rotten")))
+movie_recent_tomato_distribution_chart_percent_labeled <- ggplot(movie_recent_percent_chart_df, aes(x=all_platforms_movie, y=new_row_movie$prop, fill= tomato_category_movie))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row_movie$prop)), position = position_stack(vjust = .5))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Rotten Tomato category") +
+  ggtitle("Recent distribution of Rotten Tomatoes categories for films, 2020-2021")
+movie_recent_tomato_distribution_chart_percent_labeled 
+```
+
+
+##### TV data frame
+
+```{r tv tomato percent graph, message=FALSE, warning=FALSE}
+tv_percent_chart_df <- tv_df_3
+tv_percent_chart_df <- tv_percent_chart_df %>% 
+  drop_na(tomato_category_tv) %>% 
+  count(all_platforms_tv, tomato_category_tv) %>% 
+  group_by(all_platforms_tv)
+tv_percent_chart_df$new_row_tv<- tv_percent_chart_df %>% 
+  mutate(prop= n/sum(n),
+         tomato_category_tv= factor(tomato_category_tv, levels = 1:3, labels = c("certified_fresh", "fresh", "rotten")))
+tv_historic_tomato_distribution_chart_percent_labeled <- ggplot(tv_percent_chart_df, aes(x=all_platforms_tv, y=new_row_tv$prop, fill= tomato_category_tv))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row_tv$prop)), position = position_stack(vjust = .5))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Rotten Tomato category") +
+  ggtitle("Total distribution of Rotten Tomatoes categories over time for TV shows")
+tv_historic_tomato_distribution_chart_percent_labeled 
+```
+
+```{r tv recent tomato percent graph, message=FALSE, warning=FALSE}
+
+tv_recent_percent_chart_df <- tv_recent_df
+tv_recent_percent_chart_df <- tv_recent_percent_chart_df %>% 
+  drop_na(tomato_category_tv) %>% 
+  count(all_platforms_tv, tomato_category_tv) %>% 
+  group_by(all_platforms_tv)
+tv_recent_percent_chart_df$new_row_tv<- tv_recent_percent_chart_df %>% 
+  mutate(prop= n/sum(n),
+         tomato_category_tv= factor(tomato_category_tv, levels = 1:3, labels = c("certified_fresh", "fresh", "rotten")))
+tv_recent_tomato_distribution_chart_percent_labeled <- ggplot(tv_recent_percent_chart_df, aes(x=all_platforms_tv, y=new_row_tv$prop, fill= tomato_category_tv))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row_tv$prop)), position = position_stack(vjust = .5))+
+  scale_fill_manual(values= c("certified_fresh"= "green4", "fresh"="deepskyblue4", "rotten"="gold"))+
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Rotten Tomato category") +
+  ggtitle("Recent distribution of Rotten Tomatoes categories for TV shows, 2020-2021")
+tv_recent_tomato_distribution_chart_percent_labeled 
+```
+
+
+
+#### Age category distribution
+Now we can look into our other line of inquiry, the age ranges that each platform has.First, we're going to have the age categories appear in our desire order, least inclusive to most, then make a chart.
+
+##### Movie data frame
+```{r movie age distribution percent chart, message=FALSE, warning=FALSE}
+movie_age_percent_chart_df <- movie_df_3
+movie_age_percent_chart_df <- movie_age_percent_chart_df %>% 
+  drop_na(age_rating_movie) %>% 
+  count(all_platforms_movie, age_rating_movie) %>% 
+  group_by(all_platforms_movie) 
+
+movie_age_percent_chart_df$new_row <- movie_age_percent_chart_df %>% 
+  mutate(prop = n/sum(n),
+         age_rating_movie = factor(age_rating_movie, levels=(1:6), labels = c("unknown", "18+", "16+", "13+", "7+", "all")))
+movie_age_percent_chart_df$age_rating_movie <- factor(movie_age_percent_chart_df$age_rating_movie, levels= c("unknown", "18+", "16+", "13+", "7+", "all"))
+movie_age_rating_distribution_chart_percent_labeled <- ggplot(movie_age_percent_chart_df, aes(x=all_platforms_movie, y=new_row$prop, fill=age_rating_movie))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row$prop)), position = position_stack(vjust = .5)) +
+  scale_fill_manual(values = c("unknown"="firebrick2", "18+"="green4", "16+"="gold","13+"="deeppink4", "7+"="deepskyblue4", "all"="darkorange2")) +
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Age rating") +
+  ggtitle("All age rating distribution per platform for films")
+movie_age_rating_distribution_chart_percent_labeled 
+```
+
+```{r movie known age distribution percent chart, message=FALSE, warning=FALSE}
+movie_known_age_percent_chart_df <- movie_df_3 %>% 
+  filter(age_rating_movie != "unknown")
+
+movie_known_age_percent_chart_df <- movie_known_age_percent_chart_df %>% 
+  drop_na(age_rating_movie) %>% 
+  count(all_platforms_movie, age_rating_movie) %>% 
+  group_by(all_platforms_movie) 
+movie_known_age_percent_chart_df$new_row_movie <- movie_known_age_percent_chart_df %>% 
+  mutate(prop = n/sum(n),
+         age_rating_movie= factor(age_rating_movie, levels = 1:5, labels = c("18+", "16+", "13+", "7+", "all")))
+movie_known_age_percent_chart_df$age_rating_movie <- factor(movie_known_age_percent_chart_df$age_rating_movie, levels= c("18+", "16+", "13+", "7+", "all"))
+movie_known_age_rating_distribution_chart_percent_labeled <- ggplot(movie_known_age_percent_chart_df, aes(x=all_platforms_movie, y=new_row_movie$prop, fill=age_rating_movie))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row_movie$prop)), position = position_stack(vjust = .5)) +
+  scale_fill_manual(values = c("18+"="green4", 
+                               "16+"="gold", 
+                               "13+"="deeppink4", 
+                               "7+"="deepskyblue4", 
+                               "all"="darkorange2")) +
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Age rating") +
+  ggtitle("Known age rating distribution per platform for films")
+movie_known_age_rating_distribution_chart_percent_labeled 
+```
+
+##### TV data frame
+
+```{r tv age distribution percent chart, message=FALSE, warning=FALSE}
+tv_age_percent_chart_df <- tv_df_3
+tv_age_percent_chart_df <- tv_age_percent_chart_df %>% 
+  drop_na(age_rating_tv) %>% 
+  count(all_platforms_tv, age_rating_tv) %>% 
+  group_by(all_platforms_tv) 
+tv_age_percent_chart_df$new_row <- tv_age_percent_chart_df %>% 
+  mutate(prop = n/sum(n),
+         age_rating_tv= factor(age_rating_tv, levels = 1:6, labels = c("unknown", "18+", "16+", "13+", "7+", "all")))
+tv_age_percent_chart_df$age_rating_tv <- factor(tv_age_percent_chart_df$age_rating_tv, levels= c("unknown", "18+", "16+", "13+", "7+", "all"))
+tv_age_rating_distribution_chart_percent_labeled <- ggplot(tv_age_percent_chart_df, aes(x=all_platforms_tv, y=new_row$prop, fill=age_rating_tv))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row$prop)), position = position_stack(vjust = .5)) +
+  scale_fill_manual(values = c("unknown" = "firebrick2", 
+                               "18+"="green4", 
+                               "16+"="gold", 
+                               "13+"="deeppink4", 
+                               "7+"="deepskyblue4", 
+                               "all"="darkorange2")) +
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Age rating") +
+  ggtitle("All age rating distribution per platform for TV shows")
+tv_age_rating_distribution_chart_percent_labeled
+```
+
+```{r}
+tv_known_age_percent_chart_df <- tv_df_3 %>% 
+  filter(age_rating_tv != "unknown")
+
+tv_known_age_percent_chart_df <- tv_known_age_percent_chart_df %>% 
+  drop_na(age_rating_tv) %>% 
+  count(all_platforms_tv, age_rating_tv) %>% 
+  group_by(all_platforms_tv) 
+tv_known_age_percent_chart_df$new_row <- tv_known_age_percent_chart_df %>% 
+  mutate(prop = n/sum(n),
+         age_rating_tv= factor(age_rating_tv, levels = 1:5, labels = c("18+", "16+", "13+", "7+", "all")))
+
+tv_known_age_percent_chart_df$age_rating_tv <- factor(tv_known_age_percent_chart_df$age_rating_tv, levels = c("18+", "16+", "13+", "7+", "all"))
+
+tv_known_age_rating_distribution_chart_percent_labeled <- ggplot(tv_known_age_percent_chart_df, aes(x=all_platforms_tv, y=new_row$prop, fill=age_rating_tv))+
+  geom_col()+
+  geom_text(aes(label = percent(new_row$prop)), position = position_stack(vjust = .5)) +
+  scale_fill_manual(values = c("18+"="green4", 
+                               "16+"="gold", 
+                               "13+"="deeppink4", 
+                               "7+"="deepskyblue4", 
+                               "all"="darkorange2")) +
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.x = element_text(angle= 45,  hjust = 1, vjust= 1))+
+  labs(y = "Distribution percentage", x = "Streaming platform", fill= "Age rating") +
+  ggtitle("Known age rating distribution per platform for TV shows")
+tv_known_age_rating_distribution_chart_percent_labeled
+
+```
+
+### Step 6. Sharing Findings
+#### Business task
+The business task set to us by our fictional TV company was to help them prioritize their software development by identifying Which streaming platform offers the highest quality content, as rated by Rotten Tomatoes, and which has the widest viewing age range. Our visualizations and analysis layout the data needed to answer these questions. Again, the streaming platforms we are examining are: Netflix, Hulu, Prime Video, and Disney+ . 
+
+#### Content quantity versus quality
+There are a few angles to examine for content quality. We'll begin by examining historical data and content rating distribution.
+
+#### Mean Rotten Tomatoes scores for each platform
+
+##### Movie data frame
+```{r movie mean rotten tomatoes scores calculation, echo=FALSE, results='hide'}
+netflix_movie_rt_mean <- aggregate(movie_df_3$rotten_tomatoes_movie, list(movie_df_3$netflix_movie), mean)
+hulu_movie_rt_mean <- aggregate(movie_df_3$rotten_tomatoes_movie, list(movie_df_3$hulu_movie), mean)
+prime_video_moive_rt_mean <- aggregate(movie_df_3$rotten_tomatoes_movie, list(movie_df_3$prime_video_movie), mean)
+disney_movie_rt_mean <- aggregate(movie_df_3$rotten_tomatoes_movie, list(movie_df_3$disney_movie), mean)
+```
+
+```{r movie mean rotten tomatoes scores display}
+netflix_movie_rt_mean
+hulu_movie_rt_mean
+prime_video_moive_rt_mean
+disney_movie_rt_mean
+
+```
+
+Disney is 58.31236, Netflix is 54.44794, Hulu is 60.39733, Prime Video is 50.39874, Disney is 58.31236.  We can see here that Hulu has the highest average rating, with Disney scoring closely, and Netflix and Prime scoring lower. 
+
+##### TV data frame
+```{r tv mean rotten tomatoes scores calculation, echo=FALSE, results='hide'}
+netflix_tv_rt_mean <- aggregate(tv_df_3$rotten_tomatoes_tv, list(tv_df_3$netflix_tv), mean)
+hulu_tv_rt_mean <- aggregate(tv_df_3$rotten_tomatoes_tv, list(tv_df_3$hulu_tv), mean)
+prime_tv_moive_rt_mean <- aggregate(tv_df_3$rotten_tomatoes_tv, list(tv_df_3$prime_video_tv), mean)
+disney_tv_rt_mean <- aggregate(tv_df_3$rotten_tomatoes_tv, list(tv_df_3$disney_tv), mean)
+```
+
+```{r tv mean rotten tomatoes scores display}
+netflix_tv_rt_mean
+hulu_tv_rt_mean 
+prime_tv_moive_rt_mean 
+disney_tv_rt_mean 
+```
+
+Disney is 49.42450, Netflix is 53.55911, Hulu is 52.83775, and Prime Video is 37.76133. We can see here that Netflix has the highest average rating, with Hulu scoring closely, Disney in third, and Prime Video scoring far lower. 
+
+##### Historical Rotten Tomatoes scores
+```{r  movie and tv rotten tomatoes over the years figure 1, echo=FALSE, message=FALSE}
+grid.arrange(top= "Figure 1. Rotten Tomatoes scores over time", 
+  movie_tomato_scores_long_chart, tv_tomato_scores_long_chart)
+
+```
+
+Historically for films, there is a recent plummet in content quality across all platforms, as seen in Figure 1 above. Disney+ takes a noticeable dip and Prime Video has a low, but steady rating. Historic data for TV shows have an intriguing upswing for Prime Video scoring near 65 and a meeting of all other platforms with scores between 50 and 60. Overall, movies have a decline and most TV shows are meeting to similar scores.
+
+##### Quantity versus quality for across content type (films and shows)
+```{r both data frames count and rotten tomato scores historical, echo=FALSE, message=FALSE } 
+grid.arrange(top= "Figure 2.", historical_total_tomato_count_chart)
+```
+
+Figure 2. above shows the total content available on all platforms. It is clear that Prime Video has the most content, but also has the most rotten-scoring content, with Netflix close behind. Disney+ and Hulu look similar in their film scores for rotten, fresh, and certified fresh content, but they also do not have nearly as much content as Prime Video or Netflix. The business task want to know about quality of content, so we'll take a quick look at recent content and then examine percent distribution of content ratings.  
+
+```{r both data frames count and rotten tomato scores recent, echo=FALSE, message=FALSE} 
+grid.arrange(top="Figure 3.", recent_total_tomato_count_chart)
+```
+
+We can see here that Netflix has been producing the most in terms of recent content, with the majority of it rating rotten. Prime Video is second, with the majority also rating rotten. Hulu has the best distribution for it's new content, but much less. Although we're interested in the highest quality of content, rather than quantity of content, there is a connection emerging; those platforms that have more content tend to have a large amount rated rotten. Now we'll examine percent distribution. 
+
+
+##### Rotten Tomatoes distribution
+
+````{r rotten tomatoes distribution figure 4, fig.height=6, echo=FALSE, message=FALSE}
+grid.arrange(top = "Figure 4. Film distribution of Rotten Tomatoes score",
+             movie_historic_tomato_distribution_chart_percent_labeled , movie_recent_tomato_distribution_chart_percent_labeled )
+```
+
+Figure 4. above shows that all platforms contain at least 47% rotten films; nearly half of all films are scoring a 50 or lower with rotten tomatoes. When you look at recent films, all platforms have an increase in rotten content. Aside from multi-platform films, Hulu has the least percentage of rotten films historically and recently; Hulu also historically has highest percent of fresh films. Recently, Hulu has the least rotten films and the most fresh films. Disney+ has the highest percent of fresh films historically and recently. This figure indicated that Hulu is emerging as having the best overall quality films, with Disney+ have the most top quality films.
+
+````{r recent rotten tomatoes distribution, figure 5, fig.height=6, echo=FALSE, message=FALSE}
+grid.arrange(top = "Figure 5. TV show distribution of Rotten Tomatoes score",
+             tv_historic_tomato_distribution_chart_percent_labeled , tv_recent_tomato_distribution_chart_percent_labeled )
+```
+
+Figure 5. shows that platforms have a higher rotten percent distribution for shows than for films, aside from multi-platform shows. Historically, it seems that multi-platform shows have the best rated content. Hulu is in second, with over 66% of it's content rotten. Recently, however, it looks that Prime Video is producing higher quality content. 
+
+#### Age appropriateness recommendations
+
+Next, we'll take a look into the age appropriateness for content across various platforms. This gives us an idea of the age ranges to which each platform appeals. One that has more content for all ages would be ideal for a family, while those rated with a higher age recommendation maybe more appropriate for an audience without children. Our business task if to find the platform with the most even age distribution. 
+
+```{r, fig.width=12, fig.height= 6, echo=FALSE, message=FALSE}
+grid.arrange(top="Figure 6. All age range distribution for all content across all platforms", movie_age_rating_distribution_chart_percent_labeled , tv_age_rating_distribution_chart_percent_labeled, ncol=2)
+```
+
+Figure 6. above shows all age ratings, including those that have an unknown rating. Prime Video films have nearly 48% of their films rated as unknown, meaning that if consumers have children, age appropriateness of content could be problematic. Disney+ stands out in films and shows as having a over 50% of their content for children aged under 13 years old. For overall age ratings that include the "unknown" rating, Multi-platform films have the most evenly distributed variety, followed by Hulu. For shows, Netflix is most even, followed closely by Hulu.
+
+
+```{r, fig.width=12, fig.height= 6, echo=FALSE, message=FALSE}
+grid.arrange(top="Figure 7. Known age range distribution for all content across all platforms", movie_known_age_rating_distribution_chart_percent_labeled  , tv_known_age_rating_distribution_chart_percent_labeled, ncol=2)
+```
+
+This figure shows only the known age rating content for the platforms. This data may be considered problematic, as at least 20% of all content across Disney+, Prime Video, Hulu, and Netflix is unknown; this means at least 20% of the data has been cut form these charts. Prime video in particular had 47.9% of films unknown and 64.0% of shows unknown (see Figure 6.). The reason these charts are included is that is parental controls are added to exclude content with an unknown rating, it could dramatically affect the types of content available per platform. As is, Hulu and Prime Video have the most films for an adult audience available and Disney+ has mostly content geared towards a children's audience. For overall age ratings, Netflix has the most even choice for films and Prime Video has the most even selection for shows.  
+
+
+### Step 7. Act
+
+#### Recommended prioritization 
+Overall, Hulu has highest quality content, though Prime Video and Netflix have a higher quantity of content. When considering quality versus quantity, Hulu is a serious consideration for prioritizing. There is a recent increase in the quality of show on Prime Video that warrants consideration. 
+
+For age availability, if the developers want to steer towards a more family audience, Disney+ has the most child-friendly age rating content. Hulu has a high percentage of shows geared towards a teen audience (16+) and is second to Disney+ for child appropriate content (ratings of "all" and "7+"). For overall even age distribution, Hulu consistently displays a more even spread. If one streaming service app were to be choose for prioritization based on overall quality and content available, Hulu would be a sound recommendation. 
+
+#### Future projects
+The data sets available contain information about four major platforms, Netflix, Hulu, Prime Video, and Disney+. Further manipulation of the data would be a strong consideration, such as excluding content that is available on multiple platforms, or focus more on which platforms share the most content. The graphs and figures could be further fine tuned to show shorter, rounded percentages. Overall, there is more to explore in these data sets. 
+
+Further investigation would be recommended to learn about the very latest content quality; it would be especially interesting to see what years/decades has the highest and lowest content quality and production. There should also be research done to evaluate other popular streaming platforms, such as Funimation, HBO Max, Peacock, and Apple TV+. There is much more that can be explored concerning streaming platforms, including revenue related to content quality and age rating. Thank you for joining! 
+

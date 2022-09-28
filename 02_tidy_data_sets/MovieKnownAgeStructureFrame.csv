@@ -1,0 +1,26 @@
+"","all_platforms_movie","age_rating_movie","n","new_row_movie.all_platforms_movie","new_row_movie.age_rating_movie","new_row_movie.n","new_row_movie.prop"
+"1","   disney_film","13+",  67,   disney_film,NA,  67,0.094101124
+"2","   disney_film","16+",   4,   disney_film,NA,   4,0.005617978
+"3","   disney_film","18+",   1,   disney_film,NA,   1,0.001404494
+"4","   disney_film","7+", 274,   disney_film,NA, 274,0.384831461
+"5","   disney_film","all", 366,   disney_film,NA, 366,0.514044944
+"6","  prime_video_film","13+", 359,  prime_video_film,NA, 359,0.176760217
+"7","  prime_video_film","16+",  96,  prime_video_film,NA,  96,0.047267356
+"8","  prime_video_film","18+",1026,  prime_video_film,NA,1026,0.505169867
+"9","  prime_video_film","7+", 398,  prime_video_film,NA, 398,0.195962580
+"10","  prime_video_film","all", 152,  prime_video_film,NA, 152,0.074839980
+"11"," hulu_film","13+", 153, hulu_film,NA, 153,0.244408946
+"12"," hulu_film","16+",  25, hulu_film,NA,  25,0.039936102
+"13"," hulu_film","18+", 332, hulu_film,NA, 332,0.530351438
+"14"," hulu_film","7+",  85, hulu_film,NA,  85,0.135782748
+"15"," hulu_film","all",  31, hulu_film,NA,  31,0.049520767
+"16","multi_platform_film","13+",  47,multi_platform_film,NA,  47,0.288343558
+"17","multi_platform_film","16+",   2,multi_platform_film,NA,   2,0.012269939
+"18","multi_platform_film","18+",  75,multi_platform_film,NA,  75,0.460122699
+"19","multi_platform_film","7+",  29,multi_platform_film,NA,  29,0.177914110
+"20","multi_platform_film","all",  10,multi_platform_film,NA,  10,0.061349693
+"21","netflix_film","13+", 372,netflix_film,NA, 372,0.205980066
+"22","netflix_film","16+", 149,netflix_film,NA, 149,0.082502769
+"23","netflix_film","18+", 842,netflix_film,NA, 842,0.466223699
+"24","netflix_film","7+", 304,netflix_film,NA, 304,0.168327796
+"25","netflix_film","all", 139,netflix_film,NA, 139,0.076965670

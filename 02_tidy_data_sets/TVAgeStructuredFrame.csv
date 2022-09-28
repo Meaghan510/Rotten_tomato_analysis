@@ -1,0 +1,29 @@
+"","all_platforms_tv","age_rating_tv","n","new_row.all_platforms_tv","new_row.age_rating_tv","new_row.n","new_row.prop"
+"1","   disney_show","16+",  13,   disney_show,NA,  13,0.0424836601
+"2","   disney_show","7+",  91,   disney_show,NA,  91,0.2973856209
+"3","   disney_show","all", 116,   disney_show,NA, 116,0.3790849673
+"4","   disney_show","unknown",  86,   disney_show,NA,  86,0.2810457516
+"5","  prime_video_show","13+",   1,  prime_video_show,NA,   1,0.0006261741
+"6","  prime_video_show","16+", 147,  prime_video_show,NA, 147,0.0920475892
+"7","  prime_video_show","18+", 134,  prime_video_show,NA, 134,0.0839073262
+"8","  prime_video_show","7+", 149,  prime_video_show,NA, 149,0.0932999374
+"9","  prime_video_show","all", 144,  prime_video_show,NA, 144,0.0901690670
+"10","  prime_video_show","unknown",1022,  prime_video_show,NA,1022,0.6399499061
+"11"," hulu_show","13+",   4, hulu_show,NA,   4,0.0029985007
+"12"," hulu_show","16+", 405, hulu_show,NA, 405,0.3035982009
+"13"," hulu_show","18+", 223, hulu_show,NA, 223,0.1671664168
+"14"," hulu_show","7+", 246, hulu_show,NA, 246,0.1844077961
+"15"," hulu_show","all",  97, hulu_show,NA,  97,0.0727136432
+"16"," hulu_show","unknown", 359, hulu_show,NA, 359,0.2691154423
+"17","multi_platform_show","13+",   2,multi_platform_show,NA,   2,0.0054054054
+"18","multi_platform_show","16+", 110,multi_platform_show,NA, 110,0.2972972973
+"19","multi_platform_show","18+",  52,multi_platform_show,NA,  52,0.1405405405
+"20","multi_platform_show","7+", 100,multi_platform_show,NA, 100,0.2702702703
+"21","multi_platform_show","all",  44,multi_platform_show,NA,  44,0.1189189189
+"22","multi_platform_show","unknown",  62,multi_platform_show,NA,  62,0.1675675676
+"23","netflix_show","13+",   2,netflix_show,NA,   2,0.0011357183
+"24","netflix_show","16+", 320,netflix_show,NA, 320,0.1817149347
+"25","netflix_show","18+", 445,netflix_show,NA, 445,0.2526973311
+"26","netflix_show","7+", 245,netflix_show,NA, 245,0.1391254969
+"27","netflix_show","all", 151,netflix_show,NA, 151,0.0857467348
+"28","netflix_show","unknown", 598,netflix_show,NA, 598,0.3395797842

@@ -1,0 +1,31 @@
+"","all_platforms_movie","age_rating_movie","n","new_row.all_platforms_movie","new_row.age_rating_movie","new_row.n","new_row.prop"
+"1","   disney_film","13+",  67,   disney_film,NA,  67,0.074444444
+"2","   disney_film","16+",   4,   disney_film,NA,   4,0.004444444
+"3","   disney_film","18+",   1,   disney_film,NA,   1,0.001111111
+"4","   disney_film","7+", 274,   disney_film,NA, 274,0.304444444
+"5","   disney_film","all", 366,   disney_film,NA, 366,0.406666667
+"6","   disney_film","unknown", 188,   disney_film,NA, 188,0.208888889
+"7","  prime_video_film","13+", 359,  prime_video_film,NA, 359,0.092027685
+"8","  prime_video_film","16+",  96,  prime_video_film,NA,  96,0.024609075
+"9","  prime_video_film","18+",1026,  prime_video_film,NA,1026,0.263009485
+"10","  prime_video_film","7+", 398,  prime_video_film,NA, 398,0.102025122
+"11","  prime_video_film","all", 152,  prime_video_film,NA, 152,0.038964368
+"12","  prime_video_film","unknown",1870,  prime_video_film,NA,1870,0.479364266
+"13"," hulu_film","13+", 153, hulu_film,NA, 153,0.167947311
+"14"," hulu_film","16+",  25, hulu_film,NA,  25,0.027442371
+"15"," hulu_film","18+", 332, hulu_film,NA, 332,0.364434687
+"16"," hulu_film","7+",  85, hulu_film,NA,  85,0.093304061
+"17"," hulu_film","all",  31, hulu_film,NA,  31,0.034028540
+"18"," hulu_film","unknown", 285, hulu_film,NA, 285,0.312843030
+"19","multi_platform_film","13+",  47,multi_platform_film,NA,  47,0.185770751
+"20","multi_platform_film","16+",   2,multi_platform_film,NA,   2,0.007905138
+"21","multi_platform_film","18+",  75,multi_platform_film,NA,  75,0.296442688
+"22","multi_platform_film","7+",  29,multi_platform_film,NA,  29,0.114624506
+"23","multi_platform_film","all",  10,multi_platform_film,NA,  10,0.039525692
+"24","multi_platform_film","unknown",  90,multi_platform_film,NA,  90,0.355731225
+"25","netflix_film","13+", 372,netflix_film,NA, 372,0.104995766
+"26","netflix_film","16+", 149,netflix_film,NA, 149,0.042054756
+"27","netflix_film","18+", 842,netflix_film,NA, 842,0.237651708
+"28","netflix_film","7+", 304,netflix_film,NA, 304,0.085802992
+"29","netflix_film","all", 139,netflix_film,NA, 139,0.039232289
+"30","netflix_film","unknown",1737,netflix_film,NA,1737,0.490262489

@@ -1,0 +1,16 @@
+"","all_platforms_movie","tomato_category_movie","n","new_row_movie.all_platforms_movie","new_row_movie.tomato_category_movie","new_row_movie.n","new_row_movie.prop"
+"1","   disney_film","certified_fresh", 131,   disney_film,NA, 131,0.14555556
+"2","   disney_film","fresh", 268,   disney_film,NA, 268,0.29777778
+"3","   disney_film","rotten", 501,   disney_film,NA, 501,0.55666667
+"4","  prime_video_film","certified_fresh", 102,  prime_video_film,NA, 102,0.02614714
+"5","  prime_video_film","fresh", 672,  prime_video_film,NA, 672,0.17226352
+"6","  prime_video_film","rotten",3127,  prime_video_film,NA,3127,0.80158934
+"7"," hulu_film","certified_fresh",  95, hulu_film,NA,  95,0.10428101
+"8"," hulu_film","fresh", 370, hulu_film,NA, 370,0.40614709
+"9"," hulu_film","rotten", 446, hulu_film,NA, 446,0.48957190
+"10","multi_platform_film","certified_fresh",  32,multi_platform_film,NA,  32,0.12648221
+"11","multi_platform_film","fresh", 101,multi_platform_film,NA, 101,0.39920949
+"12","multi_platform_film","rotten", 120,multi_platform_film,NA, 120,0.47430830
+"13","netflix_film","certified_fresh", 303,netflix_film,NA, 303,0.08552075
+"14","netflix_film","fresh", 850,netflix_film,NA, 850,0.23990968
+"15","netflix_film","rotten",2390,netflix_film,NA,2390,0.67456957

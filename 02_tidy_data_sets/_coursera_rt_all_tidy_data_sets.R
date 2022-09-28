@@ -1,0 +1,334 @@
+# Streaming Platform Quality Analysis
+
+#This analysis is for case study 2 from the Google Data Analytics Certificate. The business task is set by a fictional TV company looking to prioritize the software development of various streaming platform applications. They can make applications for different streaming services, but want to focus on ones with highest quality shows and widest age range first. We will be using the two data sets created by Ruchi Bhatia that are available on Kaggle. The first dataset is, "Movies on Netflix, Prime Video, Hulu and Disney+", found here: (https://www.kaggle.com/datasets/ruchi798/movies-on-netflix-prime-video-hulu-and-disney). The second is data set is, "TV shows on Netflix, Prime Video, Hulu and Disney+", found here: (https://www.kaggle.com/datasets/ruchi798/tv-shows-on-netflix-prime-video-hulu-and-disney).  
+
+#The purpose of this script is to clean the data, manipulate it to prepare it for analysis, and then conduct simple analysis to answer: "Which streaming platform offers the highest quality content, as rated by Rotten Tomatoes, and which has the widest viewing age range?"
+
+
+
+### Step 1. Install and download the required packages. 
+#Install required packages: tidyverse for data import and wrangling, janitor for cleaning data, ggplot2 and scales for visualization, grid and gridExtra for streamlining the presentation  
+
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(scales)
+library(grid)
+library(gridExtra)
+getwd()
+
+### Step 2. Import the required datasets
+
+movie_df_1 <- read_csv("./01_raw_data_sets/MoviesOnStreamingPlatforms.csv")
+tv_df_1 <- read_csv("./01_raw_data_sets/tv_shows.csv")
+
+
+### Step 3. Clean data to prep for data manipulation and transformation
+#### Tidying our dataframes
+##### Movie data frame
+
+#We will start by cleaning the names, then selecting the columns we're interested in examining. Then we'll make each column name more distinct to clarify when we're analyzing both data frames.
+
+clean_movie_df_1 <- clean_names(movie_df_1)
+movie_df_2 <- clean_movie_df_1 %>% 
+  select("id", "year", "age", "rotten_tomatoes", "netflix", "hulu", "prime_video", "disney")
+movie_df_2 <- movie_df_2 %>% 
+  rename(release_year_movie=year, age_rating_movie=age, rotten_tomatoes_movie=rotten_tomatoes, netflix_movie=netflix, hulu_movie=hulu, prime_video_movie=prime_video, disney_movie=disney)
+glimpse(movie_df_2)
+
+#After a quick look at the movie data frame we've put together, we see it has 9,515 rows and the 8 columns we selected.  Now we resolve any NA's in our data frame, but first we check for them.
+
+sum(is.na(movie_df_2))
+sum(is.na(movie_df_2$age_rating_movie))
+sum(is.na(movie_df_2$rotten_tomatoes_movie))
+
+#It looks like age_rating_movie has most of the NA's (4,177), and rotten_tomatoes_movie as the rest (7).  We have a lot of Na's in age_rating_movie, so we're going to replace these rather than remove them. For rotten_tomatoes_movie, there are only 7 NA's in over 9500 rows, so we will remove them without skewing data.
+
+movie_df_2 <- replace_na(movie_df_2, list(age_rating_movie = "unknown"))
+movie_df_2 <- drop_na(movie_df_2)
+
+
+##### TV data frame
+#Next, we'll follow the same procedure for the TV data set, beginning with cleaning the names of each column and then selecting columns for a new data frame. We will also rename the columns for clarity. 
+
+clean_tv_df_1 <- clean_names(tv_df_1)
+tv_df_2 <- clean_tv_df_1 %>% 
+  select("id", "year", "age", "rotten_tomatoes", "netflix", "hulu", "prime_video", "disney")
+tv_df_2 <- tv_df_2 %>% 
+  rename(release_year_tv=year, age_rating_tv=age, rotten_tomatoes_tv=rotten_tomatoes, netflix_tv=netflix, hulu_tv=hulu, prime_video_tv=prime_video, disney_tv=disney)
+glimpse(tv_df_2)
+
+
+#The TV data frame is smaller than the Movie data frame, with 5,368 rows and 8 columns. Now we're going to check for NA's. 
+
+sum(is.na(tv_df_2))
+sum(is.na(tv_df_2$age_rating_tv))
+
+
+#All of the NA's are in the age category. There are too many to remove without skewing data, so we'll replace. 
+
+tv_df_2 <- replace_na(tv_df_2, list(age_rating_tv = "unknown"))
+sum(is.na(tv_df_2))
+
+
+#### Rotten tomatoes conversions
+#The next step to prepping our data is to convert the rotten_tomatoes for both data frames from character to number
+#This will be done is a couple steps. First, we'll separate the value, so it does not read as a fraction when we convert, then convert from a character type vector to a double. We'll do this for both data frames. 
+
+##### Movie data frame
+
+movie_df_2 <- separate(movie_df_2, rotten_tomatoes_movie, sep="/", into=c("rotten_tomatoes_movie", "soon_to_be_dropped")) %>% 
+  select(-soon_to_be_dropped)
+sapply(movie_df_2, class)
+vec <- c(4)
+movie_df_2[ , vec] <- apply(movie_df_2[ , vec, drop=F], 1,
+                            function(x) as.numeric(as.character(x)))
+
+
+##### TV data frame
+#We'll repeat the same separation and conversion with the TV data frame.
+
+tv_df_2 <- separate(tv_df_2, rotten_tomatoes_tv, sep="/", into=c("rotten_tomatoes_tv", "soon_to_be_dropped_2")) %>% 
+  select(-soon_to_be_dropped_2)
+sapply(tv_df_2, class)
+vec <- c(4)
+tv_df_2[ , vec] <- apply(tv_df_2[ , vec, drop=F], 1,
+                         function(x) as.numeric(as.character(x)))
+
+
+#### Collective platform column
+#There is no column containing all the streaming platforms, so we will make one now, as a new data frame, since we are making several vector type changes.First, we copy our data frame, then name changes from double vectors to characters. Then remane them, so that they remain distinct with we put them together in one column. 
+
+##### Movie data frame
+
+movie_df_3 <- movie_df_2
+glimpse(movie_df_3)
+
+sapply(movie_df_3, class)
+vec <- c(5)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(6)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(7)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+sapply(movie_df_3, class)
+vec <- c(8)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+
+
+#We have now converted all the streaming platforms columns to character vectors. We'll substitute the "1's" and "0's" as longer, distinct strings, trim white space, and make our new column.
+
+
+movie_df_3$netflix_movie <- gsub("1", "netflix_film", movie_df_3$netflix_movie)
+movie_df_3$netflix_movie <- gsub("0", "", movie_df_3$netflix_movie)
+
+movie_df_3$hulu_movie <- gsub("1", "hulu_film", movie_df_3$hulu_movie)
+movie_df_3$hulu_movie <- gsub("0", "", movie_df_3$hulu_movie)
+
+movie_df_3$prime_video_movie <- gsub("1", "prime_video_film", movie_df_3$prime_video_movie)
+movie_df_3$prime_video_movie <- gsub("0", "", movie_df_3$prime_video_movie)
+
+movie_df_3$disney_movie <- gsub("1", "disney_film", movie_df_3$disney_movie)
+movie_df_3$disney_movie <- gsub("0", "", movie_df_3$disney_movie)
+
+movie_df_3$all_platforms_movie <- paste(movie_df_3$netflix_movie , movie_df_3$hulu_movie , movie_df_3$prime_video_movie, movie_df_3$disney_movie)
+movie_df_3$all_platforms_movie <- trimws(movie_df_3$all_platforms_movie , which = c("right"))
+movie_df_3$all_platforms_movie <- 
+  ifelse((nchar(movie_df_3$all_platforms_movie)) <= 20, movie_df_3$all_platforms_movie, "multi_platform_film" )
+
+
+
+##### TV data frame
+#We repeat this conversion for the TV data frame.
+
+tv_df_3 <- tv_df_2
+sapply(tv_df_3, class)
+vec <- c(5)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                         function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(6)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                         function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(7)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                         function(x) as.character(as.numeric(x)))
+sapply(tv_df_3, class)
+vec <- c(8)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                         function(x) as.character(as.numeric(x)))
+tv_df_3$netflix_tv <- gsub("1", "netflix_show", tv_df_3$netflix_tv)
+tv_df_3$netflix_tv <- gsub("0", "", tv_df_3$netflix_tv)
+
+tv_df_3$hulu_tv <- gsub("1", "hulu_show", tv_df_3$hulu_tv)
+tv_df_3$hulu_tv <- gsub("0", "", tv_df_3$hulu_tv)
+
+tv_df_3$prime_video_tv <- gsub("1", "prime_video_show", tv_df_3$prime_video_tv)
+tv_df_3$prime_video_tv <- gsub("0", "", tv_df_3$prime_video_tv)
+
+tv_df_3$disney_tv <- gsub("1", "disney_show", tv_df_3$disney_tv)
+tv_df_3$disney_tv <- gsub("0", "", tv_df_3$disney_tv)
+
+tv_df_3$all_platforms_tv <- paste(tv_df_3$netflix_tv, tv_df_3$hulu_tv, tv_df_3$prime_video_tv, tv_df_3$disney_tv)
+tv_df_3$all_platforms_tv <- trimws(tv_df_3$all_platforms_tv, which = c("right"))
+
+tv_df_3$all_platforms_tv <-
+  ifelse((nchar(tv_df_3$all_platforms_tv)) >= 20, "multi_platform_show", tv_df_3$all_platforms_tv )
+
+
+#### Rotten Tomatoes category column 
+#We're going to add another column to each data frame, where each show or film falls into a specific rotten tomatoes category:  certified fresh, fresh, and rotten. The Rotten Tomatoes scoring system is as follows: certified fresh content scores 75 on the Tomatomerter or above, fresh scores between 74 and 60, and rotten content scores 59 or below. Finally, we'll relocate the column.
+
+##### Movie data frame
+
+movie_df_3$tomato_category_movie <- movie_df_3$rotten_tomatoes_movie
+glimpse(movie_df_3)
+sapply(movie_df_3, class)
+vec <- c(10)
+movie_df_3[ , vec] <- apply(movie_df_3[ , vec, drop=F], 1,
+                            function(x) as.character(as.numeric(x)))
+glimpse(movie_df_3)
+movie_df_3$tomato_category_movie <-
+  ifelse((movie_df_3$tomato_category_movie) >= 75, "certified_fresh", movie_df_3$tomato_category_movie)
+movie_df_3$tomato_category_movie <-
+  ifelse((((movie_df_3$tomato_category_movie) < 75)&((movie_df_3$tomato_category_movie) > 59)), "fresh", movie_df_3$tomato_category_movie)
+movie_df_3$tomato_category_movie <-
+  ifelse((movie_df_3$tomato_category_movie) <=59, "rotten", movie_df_3$tomato_category_movie)
+movie_df_3<- movie_df_3 %>% 
+  relocate(tomato_category_movie, .after=rotten_tomatoes_movie)
+
+
+##### TV data frame
+
+tv_df_3$tomato_category_tv <- tv_df_3$rotten_tomatoes_tv
+glimpse(tv_df_3)
+sapply(tv_df_3, class)
+vec <- c(10)
+tv_df_3[ , vec] <- apply(tv_df_3[ , vec, drop=F], 1,
+                         function(x) as.character(as.numeric(x)))
+tv_df_3$tomato_category_tv <-
+  ifelse((tv_df_3$tomato_category_tv) >= 75, "certified_fresh", tv_df_3$tomato_category_tv)
+tv_df_3$tomato_category_tv <-
+  ifelse((((tv_df_3$tomato_category_tv) < 75)&((tv_df_3$tomato_category_tv) > 59)), "fresh", tv_df_3$tomato_category_tv)
+tv_df_3$tomato_category_tv <-
+  ifelse((tv_df_3$tomato_category_tv) <=59, "rotten", tv_df_3$tomato_category_tv)
+tv_df_3<- tv_df_3 %>% 
+  relocate(tomato_category_tv, .after=rotten_tomatoes_tv)
+
+#We will need two data frames for the most recent movies
+movie_recent_df <- movie_df_3
+movie_recent_df <- movie_recent_df %>% 
+  filter(release_year_movie >= 2020)
+tv_recent_df<- tv_df_3
+tv_recent_df <- tv_recent_df %>% 
+  filter(release_year_tv >= 2020)
+
+#### Outliers with boxplots
+#We will examine the release_year and rotten_tomatoes for outliers. First, we'll check for outliers in release_year, then rotten_tomatoes. We can start with a boxplot to check for outliers. Then we'll use summary and the interquartile range (IQR) to find extreme outliers and remove them. 
+
+##### Movie data frame  
+
+boxplot(movie_df_3$release_year_movie)
+summary(movie_df_3$release_year_movie)
+IQR(movie_df_3$release_year_movie)
+Tmin = 2006-(3*12) 
+Tmax = 2018+(3*12) 
+movie_df_3$release_year_movie[which(movie_df_3$release_year_movie < Tmin | movie_df_3$release_year_movie > Tmax)]
+
+#We have 642 data points that are labeled as outliers here. We'll make a separate data frame that removes the outliers from the time line, but first we will examine the rotten_tomatoes column. 
+
+boxplot(movie_df_3$rotten_tomatoes_movie)
+summary(movie_df_3$rotten_tomatoes_movie)
+IQR(movie_df_3$rotten_tomatoes_movie)
+Tmin = 44- (3*18)
+Tmax = 62+ (3*18)
+
+#The Tmin and Tmax for extreme outliers do not exceed the data in the data frame, so no outliers will be removed. We can now make a data frame for the movies data frame.
+
+movie_sans_outlier_df <- movie_df_3
+movie_sans_outlier_df <- movie_sans_outlier_df %>% 
+  filter(release_year_movie >= 1970)
+
+
+##### TV data frame
+#We'll examine the TV data frame, both in release_year and rotten_tomatoes. Then we'll make a new data frame as needed. 
+
+boxplot(tv_df_3$release_year_tv)
+summary(tv_df_3$release_year_tv)
+IQR(tv_df_3$release_year_tv)
+Tmin = 2011-(3*7) 
+Tmax = 2018+(3*7) 
+tv_df_3$release_year_tv[which(tv_df_3$release_year_tv < Tmin | tv_df_3$release_year_tv > Tmax)]
+
+#We have 207 data points that are labeled as outliers here. We'll make a separate data frame that removes the outliers from the time line, but first we'll examine the rotten_tomatoes column.
+
+boxplot(tv_df_3$rotten_tomatoes_tv)
+summary(tv_df_3$rotten_tomatoes_tv)
+IQR(tv_df_3$rotten_tomatoes_tv)
+Tmin = 36- (3*24)
+Tmax = 60+ (3*24)
+
+#The Tmin and Tmax for extreme outliers do not exceed the data in the data frame, so no outliers will be removed. We can now make a data frame for the TV data frame.
+
+tv_sans_outlier_df <- tv_df_3
+tv_sans_outlier_df <- tv_sans_outlier_df %>% 
+  filter(release_year_tv >= 1990)
+
+#
+
+movie_age_percent_chart_df
+tv_age_percent_chart_df
+
+tv_known_age_percent_chart_df <- tv_df_3 %>% 
+  filter(age_rating_tv != "unknown")
+movie_known_age_percent_chart_df <- movie_df_3 %>% 
+  filter(age_rating_movie != "unknown")
+
+
+movie_percent_chart_df 
+tv_percent_chart_df
+
+### Step 5. Analysis and visualization 
+#We're looking into the quality of shows that are on various platforms, as well as the age ranges they are geared towards. 
+#We have several dataframes at which we'll be looking: movie_df_2 and tv_df_2, which keep the platforms in a numerical format; 
+#movie_df_3 and tv_df_3, which changed the platforms to characters;
+#movie_recent_df and tv_recent_df to examine the most recent content; and 
+#movie_sans_outlier and tv_sans_outlier to examine release years without outliers skewing data.
+
+
+
+write.csv(movie_df_2,"./02_tidy_data_sets/TidyBaseMoviesOnStreamingPlatforms.csv")
+write.csv(tv_df_2,"./02_tidy_data_sets/TidyBaseTVOnStreamingPlatforms.csv")
+
+write.csv(movie_df_3,"./02_tidy_data_sets/TidyMoviesInCharacterFormat.csv")
+write.csv(tv_df_3,"./02_tidy_data_sets/TidyTVInCharacterFormat.csv")
+
+write.csv(movie_recent_df,"./02_tidy_data_sets/TidyRecentMovies.csv")
+write.csv(tv_recent_df,"./02_tidy_data_sets/TidyRecentTV.csv")
+
+write.csv(movie_sans_outlier_d,"./02_tidy_data_sets/TidyMoviesNoOutliers.csv")
+write.csv(tv_df_3,"./02_tidy_data_sets/TidyTVNoOutliers.csv")
+
+write.csv(movie_age_percent_chart_df,"./02_tidy_data_sets/MovieAgeStructureFrame.csv")
+write.csv(tv_age_percent_chart_df,"./02_tidy_data_sets/TVAgeStructuredFrame.csv")                       
+
+write.csv(movie_known_age_percent_chart_df,"./02_tidy_data_sets/MovieKnownAgeStructureFrame.csv")
+write.csv(tv_known_age_percent_chart_df,"./02_tidy_data_sets/TVKnownAgeStructureFrame.csv")                       
+
+write.csv(movie_percent_chart_df,"./02_tidy_data_sets/MoviePercentFrame.csv")
+write.csv(tv_percent_chart_df,"./02_tidy_data_sets/TVPercentFrame.csv")                       
+
+                       
+                       
+                       
+                       
+                       
+                       
+                       

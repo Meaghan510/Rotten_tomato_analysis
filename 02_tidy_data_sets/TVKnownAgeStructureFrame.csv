@@ -1,0 +1,24 @@
+"","all_platforms_tv","age_rating_tv","n","new_row.all_platforms_tv","new_row.age_rating_tv","new_row.n","new_row.prop"
+"1","   disney_show","16+", 13,   disney_show,NA, 13,0.059090909
+"2","   disney_show","7+", 91,   disney_show,NA, 91,0.413636364
+"3","   disney_show","all",116,   disney_show,NA,116,0.527272727
+"4","  prime_video_show","13+",  1,  prime_video_show,NA,  1,0.001739130
+"5","  prime_video_show","16+",147,  prime_video_show,NA,147,0.255652174
+"6","  prime_video_show","18+",134,  prime_video_show,NA,134,0.233043478
+"7","  prime_video_show","7+",149,  prime_video_show,NA,149,0.259130435
+"8","  prime_video_show","all",144,  prime_video_show,NA,144,0.250434783
+"9"," hulu_show","13+",  4, hulu_show,NA,  4,0.004102564
+"10"," hulu_show","16+",405, hulu_show,NA,405,0.415384615
+"11"," hulu_show","18+",223, hulu_show,NA,223,0.228717949
+"12"," hulu_show","7+",246, hulu_show,NA,246,0.252307692
+"13"," hulu_show","all", 97, hulu_show,NA, 97,0.099487179
+"14","multi_platform_show","13+",  2,multi_platform_show,NA,  2,0.006493506
+"15","multi_platform_show","16+",110,multi_platform_show,NA,110,0.357142857
+"16","multi_platform_show","18+", 52,multi_platform_show,NA, 52,0.168831169
+"17","multi_platform_show","7+",100,multi_platform_show,NA,100,0.324675325
+"18","multi_platform_show","all", 44,multi_platform_show,NA, 44,0.142857143
+"19","netflix_show","13+",  2,netflix_show,NA,  2,0.001719690
+"20","netflix_show","16+",320,netflix_show,NA,320,0.275150473
+"21","netflix_show","18+",445,netflix_show,NA,445,0.382631126
+"22","netflix_show","7+",245,netflix_show,NA,245,0.210662081
+"23","netflix_show","all",151,netflix_show,NA,151,0.129836629
